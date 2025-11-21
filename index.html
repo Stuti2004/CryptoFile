@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>File Encryptor</title>
+  <link rel="icon" type="image/png" href="cryptofile.png" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-6">
+  <div class="w-full max-w-md bg-gray-800 rounded-xl shadow-xl p-8 space-y-6">
+    <h1 class="text-3xl font-bold text-center text-green-400">Secure File Encryptor</h1>
+    
+    <div class="space-y-4">
+      <label class="block text-sm font-medium text-gray-300" for="fileInput">Select File</label>
+      <input id="fileInput" type="file" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-400 focus:ring-opacity-25 transition" />
+
+      <label class="block text-sm font-medium text-gray-300" for="password">Password</label>
+      <input id="password" type="password" placeholder="Enter password" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:border-green-400 focus:ring focus:ring-green-400 focus:ring-opacity-25 transition" />
+    </div>
+
+    <div class="flex justify-between space-x-4">
+      <button id="encryptBtn" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 rounded-lg hover:bg-green-700 transition">
+        🔒 Encrypt
+      </button>
+      <button id="decryptBtn" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 rounded-lg hover:bg-red-700 transition">
+        🔓 Decrypt
+      </button>
+    </div>
+
+    <p id="message" class="text-center text-sm text-yellow-300 min-h-[1.5rem]"></p>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput')
+    const passwordInput = document.getElementById('password')
+    const encryptBtn = document.getElementById('encryptBtn')
+    const decryptBtn = document.getElementById('decryptBtn')
+    const messageEl = document.getElementById('message')
+
+    function downloadFile(content, fileName) {
+      const blob = new Blob([content])
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    }
+
+    encryptBtn.onclick = () => {
+      if (!fileInput.files.length) { messageEl.textContent = 'Please select a file to encrypt.'; return }
+      if (!passwordInput.value) { messageEl.textContent = 'Please enter a password.'; return }
+      const file = fileInput.files[0]
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const wordArray = CryptoJS.lib.WordArray.create(e.target.result)
+        const encrypted = CryptoJS.AES.encrypt(wordArray, passwordInput.value).toString()
+        downloadFile(encrypted, file.name + '.enc')
+        messageEl.textContent = '✅ File encrypted successfully!'
+      }
+      reader.readAsArrayBuffer(file)
+      fileInput.value = ""
+      passwordInput.value = ""
+    }
+
+    decryptBtn.onclick = () => {
+      if (!fileInput.files.length) { messageEl.textContent = 'Please select a file to decrypt.'; return }
+      if (!passwordInput.value) { messageEl.textContent = 'Please enter the password used for encryption.'; return }
+      const file = fileInput.files[0]
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const encryptedStr = new TextDecoder().decode(e.target.result)
+          const decrypted = CryptoJS.AES.decrypt(encryptedStr, passwordInput.value)
+          const typedArray = decrypted.words.reduce((arr, word) => {
+            for (let i = 3; i >= 0; i--) arr.push((word >> (i * 8)) & 0xff)
+            return arr
+          }, [])
+          const u8array = new Uint8Array(typedArray).filter(byte => byte !== 0)
+          downloadFile(u8array, file.name.replace(/\.enc$/, '.dec'))
+          messageEl.textContent = '✅ File decrypted successfully!'
+        } catch {
+          messageEl.textContent = '❌ Decryption failed. Check password and file.'
+        }
+      }
+      reader.readAsArrayBuffer(file)
+      fileInput.value = ""
+      passwordInput.value = ""
+    }
+  </script>
+</body>
+</html>
