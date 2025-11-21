@@ -23,10 +23,10 @@ Works on any modern browser and device.
 
 # How to Use
 
-### Select a file to encrypt or decrypt.
+Select a file to encrypt or decrypt.
 
-### Enter a secure password.
+Enter a secure password.
 
-### Click Encrypt or Decrypt.
+Click Encrypt or Decrypt.
 
-### The resulting file will automatically download.
+The resulting file will automatically download.
